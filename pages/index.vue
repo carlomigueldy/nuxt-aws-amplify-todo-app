@@ -71,10 +71,11 @@ export default defineComponent({
     ]);
 
     async function fetchAllTodo() {
-      const data = await API.graphql({
+      const response = await API.graphql({
         query: listTodos
       });
-      todos.value = data as Todo[];
+      // @ts-ignore
+      todos.value = response.data.listTodos.items as Todo[];
     }
 
     async function submit() {
