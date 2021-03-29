@@ -1,89 +1,110 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <div class="text-center">
-        <logo />
-        <vuetify-logo />
-      </div>
-      <v-card>
-        <v-card-title class="headline">
-          Welcome to the Vuetify + Nuxt.js template
-        </v-card-title>
-        <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
-          <p>
-            For more information on Vuetify, check out the <a
-              href="https://vuetifyjs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              documentation
-            </a>.
-          </p>
-          <p>
-            If you have questions, please join the official <a
-              href="https://chat.vuetifyjs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="chat"
-            >
-              discord
-            </a>.
-          </p>
-          <p>
-            Find a bug? Report it on the github <a
-              href="https://github.com/vuetifyjs/vuetify/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="contribute"
-            >
-              issue board
-            </a>.
-          </p>
-          <p>Thank you for developing with Vuetify and I look forward to bringing more exciting features in the future.</p>
-          <div class="text-xs-right">
-            <em><small>&mdash; John Leider</small></em>
-          </div>
-          <hr class="my-3">
-          <a
-            href="https://nuxtjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt Documentation
-          </a>
-          <br>
-          <a
-            href="https://github.com/nuxt/nuxt.js"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt GitHub
-          </a>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            nuxt
-            to="/inspire"
-          >
-            Continue
+  <div>
+    <v-row>
+      <v-col cols="12" xs="12" sm="12" md="6" lg="6" xl="6">
+        <v-form ref="formRef" @submit.prevent="submit">
+          <v-text-field
+            label="Name"
+            v-model="formData.name"
+            :rules="requiredRule"
+          ></v-text-field>
+          <v-textarea
+            label="Description"
+            v-model="formData.description"
+          ></v-textarea>
+          <v-btn color="primary" class="my-5" large depressed type="submit">
+            Submit
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-col>
-  </v-row>
+        </v-form>
+      </v-col>
+      <v-col cols="12" xs="12" sm="12" md="6" lg="6" xl="6">
+        <v-list>
+          <v-list-item v-for="(item, index) in todos" :key="index">
+            <v-list-item-content>
+              <v-list-item-title>{{ index }}</v-list-item-title>
+              <v-list-item-subtitle>Description</v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-action>
+              <v-btn color="transparent" depressed fab>
+                <v-icon>mdi-delete-outline</v-icon>
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+        </v-list>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
-<script>
-import Logo from '~/components/Logo.vue'
-import VuetifyLogo from '~/components/VuetifyLogo.vue'
+<script lang="ts">
+import {
+  defineComponent,
+  computed,
+  ref,
+  onMounted
+} from "@vue/composition-api";
+import { createTodo } from "~/graphql/mutations";
+import { API } from "aws-amplify";
+import { listTodos } from "~/graphql/queries";
 
-export default {
-  components: {
-    Logo,
-    VuetifyLogo
+type Todo = {
+  name: string;
+  description?: string;
+};
+
+const createTodoDtoDefaults: Todo = Object.freeze({
+  name: "",
+  description: ""
+});
+
+export default defineComponent({
+  setup() {
+    const formData = ref<Todo>({
+      ...createTodoDtoDefaults
+    });
+    const todos = ref<Todo[]>([]);
+
+    const formRef = ref();
+
+    const requiredRule = computed(() => [
+      (v: string) => !!v || "This field is required"
+    ]);
+
+    async function fetchAllTodo() {
+      const data = await API.graphql({
+        query: listTodos
+      });
+      todos.value = data as Todo[];
+    }
+
+    async function submit() {
+      if (formRef.value.validate()) {
+        await API.graphql({
+          query: createTodo,
+          variables: {
+            input: formData.value
+          }
+        });
+
+        // reset the `formData` values
+        formData.value = {
+          ...createTodoDtoDefaults
+        };
+        fetchAllTodo();
+      }
+    }
+
+    onMounted(() => {
+      fetchAllTodo();
+    });
+
+    return {
+      todos,
+      formData,
+      formRef,
+      submit,
+      requiredRule
+    };
   }
-}
+});
 </script>
