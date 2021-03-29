@@ -21,14 +21,11 @@
         <v-list>
           <v-list-item v-for="(item, index) in todos" :key="index">
             <v-list-item-content>
-              <v-list-item-title>{{ index }}</v-list-item-title>
-              <v-list-item-subtitle>Description</v-list-item-subtitle>
+              <v-list-item-title>{{ item.name }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ item.description }}
+              </v-list-item-subtitle>
             </v-list-item-content>
-            <v-list-item-action>
-              <v-btn color="transparent" depressed fab>
-                <v-icon>mdi-delete-outline</v-icon>
-              </v-btn>
-            </v-list-item-action>
           </v-list-item>
         </v-list>
       </v-col>
